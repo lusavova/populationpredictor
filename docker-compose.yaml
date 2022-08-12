@@ -1,0 +1,15 @@
+version: '3.1'
+
+services:
+  db:
+    image: mysql
+    container_name: mysql_predictor
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: population_predictor
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./data:/var/lib/mysql
+
