@@ -4,11 +4,11 @@ import java.util.UUID;
 
 public final class PopulationInfo {
     private final UUID id;
-    private final String country;
+    private final Country country;
     private final int year;
     private final long population;
 
-    public PopulationInfo(UUID id, String country, int year, long population) {
+    public PopulationInfo(UUID id, Country country, int year, long population) {
         this.id = id;
         this.country = country;
         this.year = year;
@@ -19,7 +19,7 @@ public final class PopulationInfo {
         return id;
     }
 
-    public String getCountry() {
+    public Country getCountry() {
         return country;
     }
 
@@ -34,7 +34,7 @@ public final class PopulationInfo {
     @Override
     public String toString() {
         return "PopulationInfo{" +
-                "country='" + country + '\'' +
+                "country='" + country.getName() + '\'' +
                 ", year=" + year +
                 ", population=" + population +
                 '}';

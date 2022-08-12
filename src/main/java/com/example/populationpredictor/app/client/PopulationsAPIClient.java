@@ -1,9 +1,11 @@
 package com.example.populationpredictor.app.client;
 
+import com.example.populationpredictor.app.models.Country;
 import com.example.populationpredictor.app.models.PopulationInfo;
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.reflect.TypeToken;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -16,6 +18,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+@Component
 public class PopulationsAPIClient {
 
     public static final String POPULATION_API_URL = "https://datahub.io/core/population/r/population.json";
@@ -23,7 +26,7 @@ public class PopulationsAPIClient {
     public List<PopulationInfo> getAllPopulationInfo() {
         try {
             return fetchPopulationData().stream()
-                    .map(data -> new PopulationInfo(UUID.randomUUID(), data.name, data.year, data.population))
+                    .map(data -> new PopulationInfo(UUID.randomUUID(), new Country(UUID.randomUUID(), data.name), data.year, data.population))
                     .collect(Collectors.toList());
         } catch (IOException | InterruptedException e) {
             // TODO: handle exception

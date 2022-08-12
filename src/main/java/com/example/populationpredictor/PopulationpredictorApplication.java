@@ -11,10 +11,7 @@ import java.util.List;
 public class PopulationpredictorApplication {
 
 	public static void main(String[] args) {
-		PopulationsAPIClient populationsAPIClient = new PopulationsAPIClient();
-		List<PopulationInfo> populationInfos = populationsAPIClient.getAllPopulationInfo();
-		populationInfos.forEach(System.out::println);
-//		SpringApplication.run(PopulationpredictorApplication.class, args);
+		SpringApplication.run(PopulationpredictorApplication.class, args);
 	}
 
 }
