@@ -12,7 +12,6 @@ import javax.sql.DataSource;
 
 @Configuration
 public class DBBeans {
-
     @Bean
     @ConfigurationProperties("spring.datasource")
     public DataSource dataSource() {

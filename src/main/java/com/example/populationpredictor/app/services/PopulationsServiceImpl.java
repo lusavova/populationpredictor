@@ -1,10 +1,13 @@
 package com.example.populationpredictor.app.services;
 
 import com.example.populationpredictor.app.models.PopulationInfo;
+import com.example.populationpredictor.app.models.options.PagingOptions;
+import com.example.populationpredictor.app.models.options.SortingOptions;
 import com.example.populationpredictor.app.repositories.PopulationsRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class PopulationsServiceImpl implements PopulationService {
@@ -12,6 +15,15 @@ public class PopulationsServiceImpl implements PopulationService {
 
     public PopulationsServiceImpl(PopulationsRepository repository) {
         this.repository = repository;
+    }
+
+    public Optional<PopulationInfo> getPopulationInfo(String country, int year) {
+        return repository.getPopulationInfo(country, year);
+    }
+
+    public List<PopulationInfo> listPopulationInfos(
+            int year, PagingOptions pagingOptions, SortingOptions sortingOptions) {
+        return repository.listPopulationInfos(year, pagingOptions, sortingOptions);
     }
 
     public void createPopulationInfo(String country, int year, long population) {
