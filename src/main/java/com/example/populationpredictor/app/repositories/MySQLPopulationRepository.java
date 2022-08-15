@@ -4,6 +4,7 @@ import com.example.populationpredictor.app.models.Country;
 import com.example.populationpredictor.app.models.PopulationInfo;
 import com.example.populationpredictor.app.models.options.PagingOptions;
 import com.example.populationpredictor.app.models.options.SortingOptions;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -18,8 +19,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static com.example.populationpredictor.app.repositories.MySQLPopulationRepository.Queries.LIST_COUNTRIES;
-import static com.example.populationpredictor.app.repositories.MySQLPopulationRepository.Queries.LIST_POPULATION_INFO;
+import static com.example.populationpredictor.app.repositories.MySQLPopulationRepository.Queries.*;
 
 @Repository
 public class MySQLPopulationRepository implements PopulationsRepository {
@@ -34,21 +34,20 @@ public class MySQLPopulationRepository implements PopulationsRepository {
 
     @Override
     public Optional<PopulationInfo> getPopulationInfo(String country, int year) {
-        PopulationInfo populationInfo = jdbc.queryForObject(Queries.GET_POPULATION_INFO,
-                (rs, rowNum) -> populationFromResultSet(rs), country, year);
-
-        if (populationInfo != null)
-            return Optional.of(populationInfo);
-
-        return Optional.empty();
+        try {
+            return Optional.ofNullable(jdbc.queryForObject(Queries.GET_POPULATION_INFO,
+                    (rs, rowNum) -> populationFromResultSet(rs), country.toLowerCase(), year));
+        } catch (EmptyResultDataAccessException e) {
+            return Optional.empty();
+        }
     }
 
     @Override
     public List<PopulationInfo> listPopulationInfos(int year, PagingOptions pagingOptions, SortingOptions sortingOptions) {
-        return jdbc.query(LIST_POPULATION_INFO,
+        return jdbc.query(getListPopulationInfo(sortingOptions),
                 (rs, rowNum) -> populationFromResultSet(rs),
-                pagingOptions.getPage() * pagingOptions.getPageSize(),
-                sortingOptions.getField(), sortingOptions.getType());
+                year,
+                pagingOptions.getPage() * pagingOptions.getPageSize(), pagingOptions.getPageSize());
     }
 
     private Map<String, Country> getCountries() {
@@ -137,25 +136,28 @@ public class MySQLPopulationRepository implements PopulationsRepository {
                         "FROM population_info as p\n" +
                         "JOIN countries as c \n" +
                         "ON c.id = p.country_id\n" +
-                        "WHERE c.name = ? AND p.year = ?;";
+                        "WHERE LOWER(c.name) = ? AND p.year = ?;";
+
+        public static String getListPopulationInfo(SortingOptions sortingOptions) {
+            return String.format("SELECT p.id, p.country_id, c.name AS country, p.year, p.population \n" +
+                    "FROM population_info as p \n" +
+                    "JOIN countries as c \n" +
+                    "ON c.id = p.country_id \n" +
+                    "WHERE p.year = ? \n" +
+                    "ORDER BY %s %s \n" +
+                    "LIMIT ?, ?;", sortingOptions.getField(), sortingOptions.getType().name());
+        }
 
         public static final String LIST_POPULATION_INFO =
-                "SELECT p.id, c.name AS country, p.year, p.population \n" +
+                "SELECT p.id, p.country_id, c.name AS country, p.year, p.population \n" +
                         "FROM population_info as p \n" +
                         "JOIN countries as c \n" +
                         "ON c.id = p.country_id \n" +
+                        "WHERE p.year = ? \n" +
                         "ORDER BY ? ? \n" +
-                        "LIMIT ?;";
+                        "LIMIT ?, ?;";
 
         public static final String LIST_COUNTRIES =
                 "SELECT id, name FROM countries;";
-
-        public static final String LATEST_GENERATED_YEAR =
-                "SELECT year FROM countries as c\n" +
-                        "JOIN population_info as p\n" +
-                        "on c.id = p.country_id\n" +
-                        "WHERE c.name = ?\n" +
-                        "ORDER BY p.year DESC\n" +
-                        "LIMIT 1;";
     }
 }

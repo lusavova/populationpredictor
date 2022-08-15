@@ -1,6 +1,7 @@
 package com.example.populationpredictor.app.controllers;
 
-import com.example.populationpredictor.app.models.PopulationInfo;
+import com.example.populationpredictor.app.mapper.PopulationData;
+import com.example.populationpredictor.app.mapper.PopulationMapper;
 import com.example.populationpredictor.app.models.options.PagingOptions;
 import com.example.populationpredictor.app.models.options.SortingOptions;
 import com.example.populationpredictor.app.services.PopulationService;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.example.populationpredictor.app.models.options.SortingOptions.Type.DESC;
 
@@ -21,23 +23,29 @@ import static com.example.populationpredictor.app.models.options.SortingOptions.
 public class PopulationController {
 
     private final PopulationService populationService;
+    private final PopulationMapper populationMapper;
 
     @Autowired
-    public PopulationController(PopulationService populationService) {
+    public PopulationController(PopulationService populationService, PopulationMapper populationMapper) {
         this.populationService = populationService;
+        this.populationMapper = populationMapper;
     }
 
     @GetMapping
-    public ResponseEntity<PopulationInfo> getPopulation(@RequestParam String country, @RequestParam int year) {
+    public ResponseEntity<PopulationData> getPopulation(@RequestParam String country, @RequestParam int year) {
         return populationService.getPopulationInfo(country, year)
+                .map(populationMapper::map)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
     @GetMapping(value = "/top")
-    public List<PopulationInfo> topPopulations(@RequestParam int year) {
+    public List<PopulationData> topPopulations(@RequestParam int year,
+                                               @RequestParam(required = false, defaultValue = "20") int limit) {
         return populationService.listPopulationInfos(
-                year, new PagingOptions(0, 20),
-                new SortingOptions("population", DESC));
+                        year, new PagingOptions(0, limit),
+                        new SortingOptions("population", DESC)).stream()
+                .map(populationMapper::map)
+                .collect(Collectors.toList());
     }
 }
