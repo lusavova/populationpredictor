@@ -4,7 +4,8 @@ USE population_predictor;
 
 CREATE TABLE IF NOT EXISTS countries (
   id VARCHAR(36) PRIMARY KEY,
-  name VARCHAR(255)
+  name VARCHAR(255),
+  UNIQUE (name)
 );
 
 CREATE TABLE IF NOT EXISTS population_info (

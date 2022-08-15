@@ -35,6 +35,7 @@ public class InternalPopulationController {
 
         List<PopulationInfo> populationInfosWithPredictions =
                 populationsPredictorService.predictPopulations(populationInfos, yearsToLookHead);
+
         List<List<PopulationInfo>> batches = getPopulationInfoInBatches(populationInfosWithPredictions, 10);
         batches.forEach(populationService::createPopulationInfo);
     }

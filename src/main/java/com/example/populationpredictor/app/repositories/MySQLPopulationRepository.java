@@ -13,9 +13,12 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
+import static com.example.populationpredictor.app.repositories.MySQLPopulationRepository.Queries.LIST_COUNTRIES;
 import static com.example.populationpredictor.app.repositories.MySQLPopulationRepository.Queries.LIST_POPULATION_INFO;
 
 @Repository
@@ -32,7 +35,7 @@ public class MySQLPopulationRepository implements PopulationsRepository {
     @Override
     public Optional<PopulationInfo> getPopulationInfo(String country, int year) {
         PopulationInfo populationInfo = jdbc.queryForObject(Queries.GET_POPULATION_INFO,
-                (rs, rowNum) -> fromResultSet(rs), country, year);
+                (rs, rowNum) -> populationFromResultSet(rs), country, year);
 
         if (populationInfo != null)
             return Optional.of(populationInfo);
@@ -43,9 +46,15 @@ public class MySQLPopulationRepository implements PopulationsRepository {
     @Override
     public List<PopulationInfo> listPopulationInfos(int year, PagingOptions pagingOptions, SortingOptions sortingOptions) {
         return jdbc.query(LIST_POPULATION_INFO,
-                (rs, rowNum) -> fromResultSet(rs),
+                (rs, rowNum) -> populationFromResultSet(rs),
                 pagingOptions.getPage() * pagingOptions.getPageSize(),
                 sortingOptions.getField(), sortingOptions.getType());
+    }
+
+    private Map<String, Country> getCountries() {
+        return jdbc.query(LIST_COUNTRIES,
+                        (rs, rowNum) -> countryFromResultSet(rs)).stream()
+                .collect(Collectors.toMap(Country::getName, (c) -> c));
     }
 
     @Override
@@ -57,7 +66,7 @@ public class MySQLPopulationRepository implements PopulationsRepository {
         });
     }
 
-    private PopulationInfo fromResultSet(ResultSet rs) throws SQLException {
+    private PopulationInfo populationFromResultSet(ResultSet rs) throws SQLException {
         UUID id = UUID.fromString(rs.getString("id"));
         UUID countryID = UUID.fromString(rs.getString("country_id"));
         String country = rs.getString("country");
@@ -67,9 +76,24 @@ public class MySQLPopulationRepository implements PopulationsRepository {
         return new PopulationInfo(id, new Country(countryID, country), year, population);
     }
 
+    private Country countryFromResultSet(ResultSet rs) throws SQLException {
+        UUID id = UUID.fromString(rs.getString("id"));
+        String country = rs.getString("name");
+
+        return new Country(id, country);
+    }
+
+
     @Override
     public void createPopulationInfo(List<PopulationInfo> populationInfoList) {
         txTemplate.executeWithoutResult(status -> {
+            Map<String, Country> countries = getCountries();
+            for (PopulationInfo populationInfo : populationInfoList) {
+                Country country = populationInfo.getCountry();
+                if (countries.containsKey(country.getName()))
+                    populationInfo.getCountry().setId(countries.get(country.getName()).getId());
+            }
+
             jdbc.batchUpdate(Queries.INSERT_COUNTRY_IF_NOT_EXISTS,
                     new BatchPreparedStatementSetter() {
                         public void setValues(PreparedStatement ps, int i) throws SQLException {
@@ -101,25 +125,21 @@ public class MySQLPopulationRepository implements PopulationsRepository {
         });
     }
 
-    @Override
-    public int getLatestGeneratedPopulationYear() {
-        /*
-        SELECT year FROM countries as c
-        JOIN population_info as p
-        on c.id = p.country_id
-        WHERE c.name = "BG"
-        ORDER BY p.year DESC
-        LIMIT 1;
-        */
-        return 0;
+    public Optional<Integer> getLatestGeneratedPopulationYear(String country) {
+        Integer year = jdbc.queryForObject(Queries.LATEST_GENERATED_YEAR, new Object[]{country}, Integer.class);
+
+        if (year != null)
+            return Optional.of(year);
+
+        return Optional.empty();
     }
 
     static class Queries {
         public static final String INSERT_COUNTRY_IF_NOT_EXISTS =
-                "INSERT INTO countries (id, name) " +
+                "INSERT IGNORE INTO countries (id, name) " +
                         "VALUES (?, ?)";
         public static final String INSERT_POPULATION_DATA =
-                "INSERT INTO population_info (id, year, population, country_id) " +
+                "INSERT IGNORE INTO population_info (id, year, population, country_id) " +
                         "VALUES (?, ?, ?, ?)";
         public static final String GET_POPULATION_INFO =
                 "SELECT p.id, c.id AS country_id, c.name AS country, p.year, p.population " +
@@ -130,10 +150,21 @@ public class MySQLPopulationRepository implements PopulationsRepository {
 
         public static final String LIST_POPULATION_INFO =
                 "SELECT p.id, c.name AS country, p.year, p.population \n" +
-                        "FROM population_info as p\n" +
+                        "FROM population_info as p \n" +
                         "JOIN countries as c \n" +
-                        "ON c.id = p.country_id\n" +
-                        "ORDER BY ? ?\n" +
+                        "ON c.id = p.country_id \n" +
+                        "ORDER BY ? ? \n" +
                         "LIMIT ?;";
+
+        public static final String LIST_COUNTRIES =
+                "SELECT id, name FROM countries;";
+
+        public static final String LATEST_GENERATED_YEAR =
+                "SELECT year FROM countries as c\n" +
+                        "JOIN population_info as p\n" +
+                        "on c.id = p.country_id\n" +
+                        "WHERE c.name = ?\n" +
+                        "ORDER BY p.year DESC\n" +
+                        "LIMIT 1;";
     }
 }
