@@ -27,7 +27,7 @@ public class PopulationController {
         this.populationService = populationService;
     }
 
-    @GetMapping(value = "/population")
+    @GetMapping
     public ResponseEntity<PopulationInfo> getPopulation(@RequestParam String country, @RequestParam int year) {
         return populationService.getPopulationInfo(country, year)
                 .map(ResponseEntity::ok)

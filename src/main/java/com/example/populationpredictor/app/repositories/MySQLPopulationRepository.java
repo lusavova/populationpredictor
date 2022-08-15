@@ -116,22 +116,22 @@ public class MySQLPopulationRepository implements PopulationsRepository {
 
     static class Queries {
         public static final String INSERT_COUNTRY_IF_NOT_EXISTS =
-                "INSERT INTO country (id, name) " +
+                "INSERT INTO countries (id, name) " +
                         "VALUES (?, ?)";
         public static final String INSERT_POPULATION_DATA =
-                "INSERT INTO population_data (id, year, population, country_id) " +
+                "INSERT INTO population_info (id, year, population, country_id) " +
                         "VALUES (?, ?, ?, ?)";
         public static final String GET_POPULATION_INFO =
                 "SELECT p.id, c.id AS country_id, c.name AS country, p.year, p.population " +
-                        "FROM population_data as p\n" +
-                        "JOIN country as c \n" +
+                        "FROM population_info as p\n" +
+                        "JOIN countries as c \n" +
                         "ON c.id = p.country_id\n" +
                         "WHERE c.name = ? AND p.year = ?;";
 
         public static final String LIST_POPULATION_INFO =
                 "SELECT p.id, c.name AS country, p.year, p.population \n" +
-                        "FROM population_data as p\n" +
-                        "JOIN country as c \n" +
+                        "FROM population_info as p\n" +
+                        "JOIN countries as c \n" +
                         "ON c.id = p.country_id\n" +
                         "ORDER BY ? ?\n" +
                         "LIMIT ?;";
