@@ -12,5 +12,4 @@ public interface PopulationsRepository {
     List<PopulationInfo> listPopulationInfos(int year, PagingOptions pagingOptions, SortingOptions sortingOptions);
     void createPopulationInfo(String country, int year, long population);
     void createPopulationInfo(List<PopulationInfo> populationInfoList);
-    Optional<Integer> getLatestGeneratedPopulationYear(String country);
 }

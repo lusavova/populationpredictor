@@ -125,15 +125,6 @@ public class MySQLPopulationRepository implements PopulationsRepository {
         });
     }
 
-    public Optional<Integer> getLatestGeneratedPopulationYear(String country) {
-        Integer year = jdbc.queryForObject(Queries.LATEST_GENERATED_YEAR, new Object[]{country}, Integer.class);
-
-        if (year != null)
-            return Optional.of(year);
-
-        return Optional.empty();
-    }
-
     static class Queries {
         public static final String INSERT_COUNTRY_IF_NOT_EXISTS =
                 "INSERT IGNORE INTO countries (id, name) " +

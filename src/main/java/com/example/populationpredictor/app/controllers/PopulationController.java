@@ -31,7 +31,7 @@ public class PopulationController {
     public ResponseEntity<PopulationInfo> getPopulation(@RequestParam String country, @RequestParam int year) {
         return populationService.getPopulationInfo(country, year)
                 .map(ResponseEntity::ok)
-                .orElseGet(() -> new ResponseEntity(HttpStatus.NOT_FOUND));
+                .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
     @GetMapping(value = "/top")

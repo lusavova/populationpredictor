@@ -26,17 +26,8 @@ public class PopulationsServiceImpl implements PopulationService {
         return repository.listPopulationInfos(year, pagingOptions, sortingOptions);
     }
 
-    public void createPopulationInfo(String country, int year, long population) {
-        repository.createPopulationInfo(country, year, population);
-    }
-
     @Override
     public void createPopulationInfo(List<PopulationInfo> populationInfoList) {
         repository.createPopulationInfo(populationInfoList);
-    }
-
-    @Override
-    public int getLatestGeneratedPopulationYear() {
-        return 0;
     }
 }
